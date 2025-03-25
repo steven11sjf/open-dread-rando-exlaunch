@@ -4,6 +4,7 @@
 #include <cstring>
 #include "cJSON.h"
 #include "remote_api.hpp"
+#include "romfs_structs.hpp"
 #include "lua-5.1.5/src/lua.hpp"
 
 typedef struct
@@ -260,6 +261,27 @@ int is_connected(lua_State* L) {
     return 1;
 }
 
+int print_class(lua_State* L) {
+    /*
+     * on 1.0.0, RemoteLua.GetClassInfo(0x7275e4f8) should point to CEntity.type_hash
+     * using remote  connector i'm getting 153565120 :/
+     * (also this is very scuffed but it keeps printing results as scientific notation 
+        which is annoying and idk  how to fix it. so here's a crappy solution :>)
+     */
+    unsigned long offset = luaL_checknumber(L, 1);
+    CType* inexe = (CType*)exl::util::modules::GetTargetOffset(offset);
+    //lua_pushinteger(L, inexe);
+    //char* _str = GetCStrId(*inst);
+    //lua_pushstring(L, _str);
+
+    // RemoteLua.GetClassInfo(0x7275e4f8) 
+    char hex_str[20];
+    sprintf(hex_str, "%08lX", inexe->typeHash);
+    const char* hstr = hex_str;
+    lua_pushstring(L, hstr);
+    //lua_pushinteger(L, (unsigned long)inexe->typeHash);
+    return 1;
+}
 
 static const luaL_Reg multiworld_lib[] = {
   {"Init", multiworld_init},
@@ -270,6 +292,7 @@ static const luaL_Reg multiworld_lib[] = {
   {"SendReceivedPickups", recv_pickups_send},
   {"SendNewGameState", new_game_state_send},
   {"Connected", is_connected},
+  {"GetClassInfo", print_class},
   {NULL, NULL}  
 };
 
