@@ -267,11 +267,11 @@ uintptr_t get_offset_from_lua(uint16_t hi, uint16_t lo) {
     return offset;
 }
 
-int print_class(lua_State* L) {
+int dump_ctype(lua_State* L) {
     uintptr_t input = get_offset_from_lua(luaL_checknumber(L, 1), luaL_checknumber(L, 2));
-    CClass* type_casted = (CClass*)exl::util::modules::GetTargetOffset(input);
+    CType* type_casted = (CType*)exl::util::modules::GetTargetOffset(input);
 
-    ClassInfoString(L, type_casted);
+    ParseCType(L, type_casted);
     return 1;
 }
 
@@ -284,7 +284,7 @@ static const luaL_Reg multiworld_lib[] = {
   {"SendReceivedPickups", recv_pickups_send},
   {"SendNewGameState", new_game_state_send},
   {"Connected", is_connected},
-  {"GetClassInfo", print_class},
+  {"DumpCType", dump_ctype},
   {NULL, NULL}  
 };
 

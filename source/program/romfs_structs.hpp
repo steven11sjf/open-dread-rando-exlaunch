@@ -2,6 +2,7 @@
 
 #include "lua-5.1.5/src/lua.hpp"
 
+struct CType;
 struct CClass;
 struct CVariable;
 struct CFunction;
@@ -14,10 +15,8 @@ struct TStringPoolEntry {
     int16_t _padding;
 };
 
-struct TStringInstance {
-    TStringPoolEntry* entry;
-    uint32_t uses;
-    int32_t _padding;
+struct CRntString {
+    
     char* string;
     int32_t length;
     int32_t _padding2;
@@ -29,6 +28,13 @@ struct TStringInstance {
     int8_t _padding4;
 };
 
+struct TStringInstance {
+    TStringPoolEntry* entry;
+    uint32_t uses;
+    int32_t _padding;
+    CRntString rnt_str;
+};
+
 struct CStrId {
     TStringInstance* inst;
 };
@@ -38,7 +44,7 @@ const char* GetCStrId(CStrId);
 template<class T>
 struct CTypedValue {
     T* value;
-    CClass* reflection;
+    CType* reflection;
     uint heapId;
     uint unk0;
 };
@@ -83,10 +89,10 @@ struct CType {
     uint64_t funcGetHashCode;
     uint64_t funcGetRefInfo;
     uint64_t membersFunction;
-    CClass* parentClass;
+    CType* parentClass;
     CRntDictionary<CStrId, CTypedValue<void*>>* metadata;
     uint64_t unk2;
-    CRntVector<CClass> childClasses;
+    CRntVector<CType*> childClasses;
     CRntDictionary<uint64_t, void*> dict1;
 };
 
@@ -95,6 +101,57 @@ struct CClass {
     uint64_t fields_func;
     CRntDictionary<uint64_t, CVariable> vctVariables;
     CRntDictionary<CStrId, CFunction> vctFunctions;
+};
+
+struct CCollectionType {
+    CType typeData;
+    uint unk0;
+    uint unk1;
+    CType* keyType;
+    CType* valType;
+    uint64_t unk2;
+    uint64_t unk3;
+    uint64_t funcGetLength;
+    uint64_t funcClearMembers;
+    uint64_t funcInsertCtor;
+    uint64_t funcInsertDtor;
+    uint64_t funcRemoveAt;
+    uint64_t funcGetElement;
+    uint64_t funcGetWithBoundCheck;
+    uint64_t funcGetCreateElCopy;
+    uint64_t funcGetCreateElDtor;
+    uint64_t unk4;
+    uint64_t funcGetNextEmpty;
+    uint64_t unk6;
+    uint64_t unk7;
+};
+
+struct EnumValue {
+    CStrId enumName;
+    uint enumValue;
+    uint _padding;
+};
+
+struct CEnumType {
+    CType typeData;
+    CType* item_type;
+    uint64_t valuesCtor;
+    CRntVector<EnumValue> values;
+};
+
+struct CFlagsetType {
+    CType typeData;
+    CType* itemType;
+    CEnumType* flagset;
+};
+
+struct CPointerType {
+    CType typeData;
+    uint64_t unk0;
+    CType* pointingType;
+    uint64_t fun1;
+    uint64_t fun2;
+    uint64_t fun3;
 };
 
 struct CVariable {
@@ -136,4 +193,11 @@ struct CFunction {
     uint32_t unk7;
 };
 
+struct CompleteInfo {
+    uint64_t unk0;
+    CRntVector<CRntString> varNames;
+};
+
 const char* ClassInfoString(lua_State* L, CClass* cls);
+
+void ParseCType(lua_State* L, CType* cls);
