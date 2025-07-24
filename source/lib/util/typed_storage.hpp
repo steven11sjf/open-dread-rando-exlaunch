@@ -51,8 +51,8 @@ namespace exl::util {
     namespace impl {
 
         template<typename T>
-        static ALWAYS_INLINE T *GetPointerForConstructAt(TypedStorage<T> &ts) {
-            return reinterpret_cast<T *>(std::addressof(ts._storage));
+        static ALWAYS_INLINE std::remove_cv_t<T> *GetPointerForConstructAt(TypedStorage<T> &ts) {
+            return reinterpret_cast<std::remove_cv_t<T> *>(std::addressof(ts._storage));
         }
 
     }

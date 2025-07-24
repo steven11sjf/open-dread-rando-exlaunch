@@ -3,9 +3,10 @@
 #include <nn.hpp>
 #include <cstring>
 #include "cJSON.h"
+#include "globals.hpp"
 #include "remote_api.hpp"
-#include "romfs_structs.hpp"
 #include "lua-5.1.5/src/lua.hpp"
+#include "type_exporter.hpp"
 
 typedef struct
 {
@@ -16,17 +17,11 @@ typedef struct
 stringList *g_stringList = NULL;
 size_t g_stringListSize = 0;
 
-/* Function ptr to dread's crc function. */
-u64 (*crc64)(char const *str, u64 size) = NULL;
-
-/* The main executable's pcall, so we get proper error handling. */
-int (*exefs_lua_pcall) (lua_State *L, int nargs, int nresults, int errfunc) = NULL;
-
 /* Takes in a pointer to string and if found in the list, is replaced with the desired string. */
 void replaceString(const char **str)
 {
     /* Hash the string for quicker comparison. */
-    u64 crc = crc64(*str, strlen(*str));
+    u64 crc = Globals::CRC64(*str, strlen(*str));
 
     /* Attempt to find matching hash in our list. */
     for(size_t i = 0; i < g_stringListSize; i++)
@@ -101,13 +96,13 @@ void populateStringReplacementList()
             char *replacementFileStr = (char *)malloc(strlen(fileStr) + strlen("rom:/") + 1);
             strcpy(replacementFileStr, "rom:/");
             replacementFileStr = strcat(replacementFileStr, fileStr);
-            g_stringList[i].crc = crc64(fileStr, strlen(fileStr));
+            g_stringList[i].crc = Globals::CRC64(fileStr, strlen(fileStr));
             g_stringList[i].replacement = replacementFileStr;
         } 
         else if(cJSON_IsObject(itemObject))
         {
             char const *str = cJSON_GetItemName(itemObject);
-            g_stringList[i].crc = crc64(str, strlen(str));
+            g_stringList[i].crc = Globals::CRC64(str, strlen(str));
             g_stringList[i].replacement = cJSON_GetStringValue(itemObject->child);
         }
         i++;
@@ -162,7 +157,7 @@ int multiworld_update(lua_State* outerLuaState) {
 
         if (loadResult == 0) {
             // -1, +1 - call the code we just loaded
-            int pcallResult = exefs_lua_pcall(L, 0, 1, 0);
+            int pcallResult = Globals::ExefsLuaPCall(L, 0, 1, 0);
             // -2, +1 - call tostring with the result of that
             lua_call(L, 1, 1);
 
@@ -223,6 +218,13 @@ int gamelog_send(lua_State* L) {
     return 0;
 }
 
+int send_class_string(lua_State* L)  {
+    if (RemoteApi::clientSubs.logging) {
+        build_and_send_message(L, PACKET_TYPEDUMP);
+    }
+    return 0;
+}
+
 /* Gets called by lua to send the inventory */
 int inventory_send(lua_State* L) {
     if (RemoteApi::clientSubs.multiWorld) {
@@ -267,11 +269,33 @@ uintptr_t get_offset_from_lua(uint16_t hi, uint16_t lo) {
     return offset;
 }
 
+// param1 is the high bits for a class
+// param2 is the low bits for a class
+// returns a json string representing the class
 int dump_ctype(lua_State* L) {
     uintptr_t input = get_offset_from_lua(luaL_checknumber(L, 1), luaL_checknumber(L, 2));
     CType* type_casted = (CType*)exl::util::modules::GetTargetOffset(input);
 
-    ParseCType(L, type_casted);
+    TypeExporter::ParseCType(L, type_casted);
+    return 1;
+}
+
+// no params
+// return table of all hi/lo values for classes, and the number of classes
+int parse_hashed_classes(lua_State* L) {
+    TypeExporter::ParseHashedClasses(L, Globals::GetReflectionManager());
+    return 2;
+}
+
+// no params
+// return executable offset as string
+int get_executable_offset(lua_State* L) {
+    lua_pushstring(L, std::to_string(exl::util::modules::GetTargetStart()).c_str());
+    return 1;
+}
+
+int get_class_by_name(lua_State *L) {
+    TypeExporter::ParseCType(L);
     return 1;
 }
 
@@ -285,7 +309,11 @@ static const luaL_Reg multiworld_lib[] = {
   {"SendNewGameState", new_game_state_send},
   {"Connected", is_connected},
   {"DumpCType", dump_ctype},
-  {NULL, NULL}  
+  {"ParseHashedClasses", parse_hashed_classes},
+  {"SendClassString", send_class_string},
+  {"GetExecutableOffset", get_executable_offset},
+  {"GetClassByName", get_class_by_name},
+  {NULL, NULL},
 };
 
 /* Hook asdf */
@@ -313,17 +341,8 @@ HOOK_DEFINE_TRAMPOLINE(LuaRegisterGlobals) {
     }
 };
 
-typedef struct
-{
-    ptrdiff_t crc64;
-    ptrdiff_t CFilePathStrIdCtor;
-    ptrdiff_t luaRegisterGlobals;
-    ptrdiff_t lua_pcall;
-
-} functionOffsets;
-
 /* Handle version differences */
-void getVersionOffsets(functionOffsets *offsets)
+void getVersionOffsets(FunctionOffsets *offsets)
 {
     nn::oe::DisplayVersion dispVer;
     nn::oe::GetDisplayVersion(&dispVer);
@@ -334,6 +353,11 @@ void getVersionOffsets(functionOffsets *offsets)
         offsets->CFilePathStrIdCtor = 0x166C8;
         offsets->luaRegisterGlobals = 0x010aed50;
         offsets->lua_pcall = 0x010a3a80;
+        offsets->reflectionMgr = 0x1d4c8d0;
+        offsets->CanCastTo = 0x9d52c;
+        offsets->CastObject = 0x9d960;
+        offsets->GetClassFromHash = 0xa5118;
+        offsets->mainAllocator = 0x1d58ed0;
     } 
     else /* 1.0.0 - 2.0.0 */
     {
@@ -341,12 +365,17 @@ void getVersionOffsets(functionOffsets *offsets)
         offsets->CFilePathStrIdCtor = 0x16624;
         offsets->luaRegisterGlobals = 0x106ce90;
         offsets->lua_pcall = 0x1061bc0;
+        offsets->reflectionMgr = 0x1cf38d0;
+        offsets->CanCastTo = 0x9d23c;
+        offsets->CastObject = 0x9d670;
+        offsets->GetClassFromHash = 0xa4e28;
+        offsets->mainAllocator = 0x1cffed0;
     }
 }
 
 extern "C" void exl_main(void* x0, void* x1)
 {
-    functionOffsets offsets;
+    FunctionOffsets offsets;
     /* Setup hooking enviroment. */
     exl::hook::Initialize();
 
@@ -362,9 +391,7 @@ extern "C" void exl_main(void* x0, void* x1)
     /* InstallAtPtr takes an absolute address as a uintptr_t. */
     /* InstallAtOffset takes an offset into the main module. */
 
-    /* Get the address of dread's crc64 function */
-    crc64 = (u64 (*)(char const *, u64))exl::util::modules::GetTargetOffset(offsets.crc64);
-    exefs_lua_pcall = (int (*) (lua_State *L, int nargs, int nresults, int errfunc)) exl::util::modules::GetTargetOffset(offsets.lua_pcall);
+    Globals::SetValues(&offsets);
 }
 
 extern "C" NORETURN void exl_exception_entry()

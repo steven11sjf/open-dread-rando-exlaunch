@@ -23,6 +23,7 @@ enum PacketType {
     PACKET_RECEIVED_PICKUPS,
     PACKET_GAME_STATE,
     PACKET_MALFORMED,
+    PACKET_TYPEDUMP
 };
 
 enum ClientInterests {
@@ -33,7 +34,7 @@ enum ClientInterests {
 class RemoteApi {
   public:
     static constexpr const int VERSION = 1;
-    static constexpr const int BufferSize = 4096;
+    static constexpr const int BufferSize = 1024*64;
     static struct ClientSubscriptions clientSubs;
     using CommandBuffer = std::array<char, BufferSize>;
 

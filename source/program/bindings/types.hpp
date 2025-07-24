@@ -1,99 +1,55 @@
+// contains bindings for the Mercury Engine type system (CType, CClass, CCollectionType, etc)
+// 
+
 #pragma once
 
-#include "lua-5.1.5/src/lua.hpp"
+#include "common_classes.hpp"
 
-struct CType;
-struct CClass;
+template<class T>
+struct CTypedValue;
 struct CVariable;
 struct CFunction;
 
-struct TStringPoolEntry {
-    char* string;
-    uint8_t index;
-    uint8_t poolIndex;
-    uint8_t used;
-    int16_t _padding;
-};
-
-struct CRntString {
-    
-    char* string;
-    int32_t length;
-    int32_t _padding2;
-    uint64_t allocator;
-    uint64_t _unk;
-    uint64_t crc64Hash;
-    uint8_t isEmpty;
-    int16_t _padding3;
-    int8_t _padding4;
-};
-
-struct TStringInstance {
-    TStringPoolEntry* entry;
-    uint32_t uses;
-    int32_t _padding;
-    CRntString rnt_str;
-};
-
-struct CStrId {
-    TStringInstance* inst;
-};
-
-const char* GetCStrId(CStrId);
-
-template<class T>
-struct CTypedValue {
-    T* value;
-    CType* reflection;
-    uint heapId;
-    uint unk0;
-};
-
-template<class T>
-struct CRntVector {
-    T* values;
-    uint count;
-    uint max_size;
-    uint block_size;
-    bool initialized;
-    uint heapId;
-    uint _unk;
-    uint64_t allocator;
-};
-
-template<class K, class V>
-struct CRntDictionary{
-    V* values;
-    K* keys;
-    uint count;
-    uint max_size;
-    uint block_size;
-    uint heapId;
-    uint64_t allocator;
+struct Conversion{
+    uint64_t from;
+    uint64_t to;
+    uint64_t func;
 };
 
 struct CType {
     uint64_t vtab;
     CStrId className;
     uint64_t typeHash;
-    uint64_t size;
+    size_t size;
     int32_t unk0;
     int32_t unk1;
-    uint64_t funcCtor;
-    uint64_t copyCtor;
-    uint64_t moveCtor;
-    uint64_t funcDtor;
-    uint64_t copyDtor;
-    uint64_t moveDtor;
-    uint64_t funcCompare;
-    uint64_t funcGetHashCode;
-    uint64_t funcGetRefInfo;
+
+    // this is allocated to type.size
+    void (*funcCtor)(void*);
+    // this is allocated to type.size, other is an initialized T
+    void (*copyCtor)(void*, void*);
+    // same as above, but other is destroyed
+    void (*moveCtor)(void*, void*);
+    // destroys initialized this
+    void (*funcDtor)(void*);
+    // destroys initialized this, copies other into this
+    void (*copyDtor)(void*, void*);
+    // same as above but other is destroyed
+    void (*moveDtor)(void*, void*);
+
+    // compares two instances
+    bool (*funcCompare)(void*, void*);
+    // unknown, usually returns empty crc32 or -1?
+    int (*funcGetHashCode)(void*);
+    // returns the CType
+    CType* (*funcGetRefInfo)();
+
     uint64_t membersFunction;
     CType* parentClass;
     CRntDictionary<CStrId, CTypedValue<void*>>* metadata;
     uint64_t unk2;
     CRntVector<CType*> childClasses;
-    CRntDictionary<uint64_t, void*> dict1;
+    CRntDictionary<uint64_t, Conversion*> conversions;
 };
 
 struct CClass {
@@ -105,8 +61,8 @@ struct CClass {
 
 struct CCollectionType {
     CType typeData;
-    uint unk0;
-    uint unk1;
+    uint32_t unk0;
+    uint32_t unk1;
     CType* keyType;
     CType* valType;
     uint64_t unk2;
@@ -128,8 +84,8 @@ struct CCollectionType {
 
 struct EnumValue {
     CStrId enumName;
-    uint enumValue;
-    uint _padding;
+    uint32_t enumValue;
+    uint32_t _padding;
 };
 
 struct CEnumType {
@@ -156,7 +112,7 @@ struct CPointerType {
 
 struct CVariable {
     CStrId sName;
-    uint32_t offset;
+    int32_t offset;
     uint32_t unk0;
     CClass* typeReflection;
     CFunction* getter;
@@ -193,11 +149,29 @@ struct CFunction {
     uint32_t unk7;
 };
 
-struct CompleteInfo {
-    uint64_t unk0;
-    CRntVector<CRntString> varNames;
+struct ObjectType {
+    void* object;
+    CType* type;
 };
 
-const char* ClassInfoString(lua_State* L, CClass* cls);
+struct TypeObject {
+    CType* type;
+    void* object;
+};
 
-void ParseCType(lua_State* L, CType* cls);
+namespace TypeFuncs {
+    void* FuncCtor(CType* type);
+    void* CopyCtor(CType* type, void* other);
+    void* MoveCtor(CType* type, void* other);
+    void FuncDtor(CType* type, void* obj);
+    void CopyDtor(CType* type, void* obj, void* other);
+    void MoveDtor(CType* type, void* obj, void* other);
+};
+
+template<class T>
+struct CTypedValue {
+    T* value;
+    CType* ctype;
+    uint32_t heapId;
+    uint32_t unk0;
+};

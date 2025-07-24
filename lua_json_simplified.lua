@@ -49,22 +49,10 @@ end
 
 function DumpVar(o)
     local s = "{\"sName\": \""..o["sName"].."\", "
-    s = s.."\"unk0\": \""..o["unk0"].."\","
-    s = s.."\"fieldReflection\": \""..o["fieldReflection"].."\","
-    s = s.."\"unk2\": \""..o["unk2"].."\","
-    s = s.."\"unk3\": \""..o["unk3"].."\","
-    s = s.."\"unk4\": \""..o["unk4"].."\","
-    s = s.."\"dict2_count\": \""..o["dict2_count"].."\","
     s = s.."\"offset\": \""..o["offset"].."\", "
     s = s.."\"type\": \""..o["type"].."\", "
-    s = s.."\"getterType\": \""..o["getterType"].."\", "
     s = s.."\"getter\": \""..o["getter"].."\", "
-    s = s.."\"setterType\": \""..o["setterType"].."\", "
     s = s.."\"setter\": \""..o["setter"].."\","
-    s = s.."\"unk01\": \""..o["unk01"].."\","
-    s = s.."\"unk02\": \""..o["unk02"].."\","
-    s = s.."\"unk03\": \""..o["unk03"].."\","
-    s = s.."\"unk04\": \""..o["unk04"].."\","
     s = s..DumpMetadata(o)
     s = s.."}"
     return s
@@ -80,17 +68,7 @@ function DumpFunc(o)
     if string.sub(s, -1) == ',' then
         s = string.sub(s, 0, -2)
     end
-    s = s.."],"
-    s = s.."\"caller_value\": "..o["caller_value"]..","
-    s = s.."\"func_ptr\": "..o["func_ptr"]..","
-    s = s.."\"vtable\": "..o["vtable_offset"]..","
-    s = s.."\"unk1\": "..o["unk1"]..","
-    s = s.."\"unk2\": "..o["unk2"]..","
-    s = s.."\"unk3\": "..o["unk3"]..","
-    s = s.."\"unk4\": "..o["unk4"]..","
-    s = s.."\"unk5\": "..o["unk5"]..","
-    s = s.."\"unk6\": "..o["unk6"]..","
-    s = s.."\"unk7\": "..o["unk7"]..","
+    s = s.."]"
     s = s..DumpMetadata(o)
     s = s.."}"
     return s
@@ -122,28 +100,11 @@ end
 function DumpCollection(o)
     local s = "\"keyType\": \""..Readctype(o["keyType"]).."\","
     s = s.."\"valueType\": \""..Readctype(o["valType"]).."\","
-    s = s.."\"unk0\": "..o["unk0"]..","
-    s = s.."\"unk1\": "..o["unk1"]..","
-    s = s.."\"unk2\": "..o["unk2"]..","
-    s = s.."\"unk3\": "..o["unk3"]..","
-    s = s.."\"funcGetLength\": "..o["funcGetLength"]..","
-    s = s.."\"funcClearMembers\": "..o["funcClearMembers"]..","
-    s = s.."\"funcInsertCtor\": "..o["funcInsertCtor"]..","
-    s = s.."\"funcInsertDtor\": "..o["funcInsertDtor"]..","
-    s = s.."\"funcRemoveAt\": "..o["funcRemoveAt"]..","
-    s = s.."\"funcGetElement\": "..o["funcGetElement"]..","
-    s = s.."\"funcGetWithBoundCheck\": "..o["funcGetWithBoundCheck"]..","
-    s = s.."\"funcGetCreateElCopy\": "..o["funcGetCreateElCopy"]..","
-    s = s.."\"funcGetCreateElDtor\": "..o["funcGetCreateElDtor"]..","
-    s = s.."\"unk4\": "..o["unk4"]..","
-    s = s.."\"funcGetNextEmpty\": "..o["funcGetNextEmpty"]..","
-    s = s.."\"unk6\": "..o["unk6"]..","
-    s = s.."\"unk7\": "..o["unk7"]
     return s
 end
 
 function DumpEnum(o)
-    local s = "\"itemtype\": \""..o["value_type"].."\",\"valuesCtor\": \""..o["valuesCtor"].."\",\"values\": {"
+    local s = "\"itemtype\": \""..o["value_type"].."\",\"values\": {"
     for k, v in pairs(o["values"]) do
         s = s.."\""..k.."\": "..tostring(v)..","
     end
@@ -162,10 +123,6 @@ end
 
 function DumpPointer(o)
     local s = "\"points_to\": \""..Readctype(o["pointTo"])
-    s = s.."\",\"unk0\":"..o["unk0"]
-    s = s..",\"fun1\":"..o["fun1"]
-    s = s..",\"fun2\":"..o["fun2"]
-    s = s..",\"fun3\":"..o["fun3"]
     return s
 end
 
@@ -173,19 +130,6 @@ function DumpT(o)
     local s = "{\"sName\": \""..o["sName"].."\", "
     s = s.."\"type\": \""..o["type"].."\", "
     s = s.."\"size\": "..o["size"]..", "
-    s = s.."\"unk0\": "..o["unk0"]..", "
-    s = s.."\"unk1\": "..o["unk1"]..", "
-    s = s.."\"unk2\": "..o["unk2"]..", "
-    s = s.."\"funcCtor\": "..o["funcCtor"]..", "
-    s = s.."\"copyCtor\": "..o["copyCtor"]..", "
-    s = s.."\"moveCtor\": "..o["moveCtor"]..", "
-    s = s.."\"funcDtor\": "..o["funcDtor"]..", "
-    s = s.."\"copyDtor\": "..o["copyDtor"]..", "
-    s = s.."\"moveDtor\": "..o["moveDtor"]..", "
-    s = s.."\"funcCompare\": "..o["funcCompare"]..", "
-    s = s.."\"funcGetHashCode\": "..o["funcGetHashCode"]..", "
-    s = s.."\"funcGetRefInfo\": "..o["funcGetRefInfo"]..", "
-    s = s.."\"membersFunction\": "..o["membersFunction"]..", "
     s = s.."\"parent\": \""..Readctype(o["parent"]).."\", "
     
     s = s.."\"children\": ["
