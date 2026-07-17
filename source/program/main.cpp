@@ -9,6 +9,7 @@
 #include "lua_helper.hpp"
 #include "item_pickups.hpp"
 #include "romfs.hpp"
+#include "rbx.hpp"
 
 /* The main executable's pcall, so we get proper error handling. */
 int (*exefs_lua_pcall) (lua_State *L, int nargs, int nresults, int errfunc) = NULL;
@@ -252,6 +253,7 @@ extern "C" void exl_main(void* x0, void* x1)
     odr::lua::InstallFunctions(&offsets);
     odr::pickups::InstallHooks(&offsets);
     odr::romfs::InstallHooks(&offsets);
+    odr::rbx::Install();
 
     /* Alternative install funcs: */
     /* InstallAtPtr takes an absolute address as a uintptr_t. */

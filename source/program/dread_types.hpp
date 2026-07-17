@@ -24,6 +24,8 @@ typedef struct {
 	/** Used by the game engine to call a Lua function (by its qualified name) from C++ using varargs arguments. */
 	ptrdiff_t CallFunctionWithArguments;
 
+	/** Gets the main allocator, which is required to create vectors or  */
+
 	// Pickups
 	/** Called when the player first collides with a Pickup item. */
     ptrdiff_t OnCollectPickup;
@@ -66,4 +68,13 @@ struct CStringInstance {
 
 struct CStrId {
 	CStringInstance *value;
+};
+
+// TODO implement CClass
+typedef ptrdiff_t CClass;
+
+struct SStringPool {
+	void* bla;
+	void* bla2;
+	CStringInstance nullStr;
 };
