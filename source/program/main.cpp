@@ -218,7 +218,6 @@ void getVersionOffsets(functionOffsets *offsets)
 
         // String bank
         offsets->StaticStringBank = 0x1d552d0;
-        offsets->FindOrCreateStringInstance = 0x406dc;
 
         // Fields
         offsets->GenerateReflection = 0xa497c;
@@ -248,7 +247,6 @@ void getVersionOffsets(functionOffsets *offsets)
 
         // String bank
         offsets->StaticStringBank = 0x1cfc2d0;
-        offsets->FindOrCreateStringInstance = 0x4063c;
 
         // Fields
         offsets->GenerateReflection = 0xa468c;

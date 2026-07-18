@@ -9,14 +9,13 @@
 void* (*RegisterVariablePtr)(CClass *cls, CStrId *varName, CClass *type, uint32_t offset, int64_t getter, int64_t setter) = NULL;
 
 
-VariableDef g_Variables[2] = {
+VariableDef g_Variables[0] = {
     // Example:
     // { "CChozoCommanderXLifeComponent",      "fTimeDamaged",         "float",            0x26c }
 };
 
 
-/* Hook RBX fields. Run this after  */
-/* Once romfs is mounted, we can read files from it in order to populate our string replacement list. */
+/* Hooks after the reflection system is generated. This allows us to look up the requested cclass/variable type by string.  */
 HOOK_DEFINE_TRAMPOLINE(GenerateReflection) {
     static Result Callback(void *reflection) {
         CStrId varName;

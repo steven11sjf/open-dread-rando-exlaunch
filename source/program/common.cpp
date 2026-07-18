@@ -24,6 +24,7 @@ namespace odr::common {
         GetCClassPtr = (CClass*(*)(ReflectionManager*, crc64_t*))exl::util::modules::GetTargetOffset(offsets->GetCClassPtr);
     }
 
+    /** Takes a char const* and returns its crc64 hash */
     crc64_t CRC64(char const* str) {
         if (Crc64Ptr == NULL)
             return (crc64_t)-1;
@@ -31,6 +32,7 @@ namespace odr::common {
         return Crc64Ptr(str, strlen(str));
     }
 
+    /** Get the CStrId for the selected string. If the string does not exist in the pool, one will be allocated. */
     void GetCStrId(CStrId* inst, const char* str, bool storeInPool) {
         if (GetCStrIdPtr == NULL)
             return;
@@ -38,6 +40,7 @@ namespace odr::common {
         GetCStrIdPtr(inst, str, storeInPool);
     }
 
+    /** Use this on any instance of CStrId you are overwriting/not using. this is an inlined function in the executable. */
     void DiscardCStrId(CStrId* inst) {
         if (*stringPool == NULL)
             return;
@@ -51,6 +54,7 @@ namespace odr::common {
         inst->value = (*stringPool)->nullStr;
     }
 
+    /** Retrieves a CClass (possibly CType?) from the reflection manager. */
     CClass* GetCClass(char const* className) {
         if (GetCClassPtr == NULL || *refMgr == NULL)
             return NULL;

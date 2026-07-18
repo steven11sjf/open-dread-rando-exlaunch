@@ -39,8 +39,6 @@ typedef struct {
 	/** Used by the game engine to call a Lua function (by its qualified name) from C++ using varargs arguments. */
 	ptrdiff_t CallFunctionWithArguments;
 
-	/** Gets the main allocator, which is required to create vectors or  */
-
 	// Pickups
 	/** Called when the player first collides with a Pickup item. */
     ptrdiff_t OnCollectPickup;
@@ -57,9 +55,6 @@ typedef struct {
 
 	/** A large array of common CStrId in alpha order */
 	ptrdiff_t StaticStringBank;
-
-	/** Finds a StringInstance or creates one */
-	ptrdiff_t FindOrCreateStringInstance;
 
 	/** Function that generates all CClasses. Can be hooked to access class data. */
 	ptrdiff_t GenerateReflection;
@@ -97,8 +92,9 @@ struct CStrId {
 	CStringInstance *value;
 };
 
+// TODO implement fully; this is just to provide access to nullStr for CStrId-related purposes.
 struct SStringPool {
-	void* bla;
-	void* bla2;
+	void* vtable;
+	ptrdiff_t unk1;
 	CStringInstance *nullStr;
 };
