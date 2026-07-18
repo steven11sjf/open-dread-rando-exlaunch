@@ -10,8 +10,8 @@ void* (*RegisterVariablePtr)(CClass *cls, CStrId *varName, CClass *type, uint32_
 
 
 VariableDef g_Variables[2] = {
-    { "CChozoCommanderXLifeComponent",      "fTimeDamaged",         "float",            0x26c },
-    { "CChozoCommanderXLifeComponent",      "bIsDamageTick",        "bool",             0x268 }
+    // Example:
+    // { "CChozoCommanderXLifeComponent",      "fTimeDamaged",         "float",            0x26c }
 };
 
 
