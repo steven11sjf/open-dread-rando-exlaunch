@@ -1,0 +1,50 @@
+#include "fields.hpp"
+
+#include "lib.hpp"
+#include "common.hpp"
+#include "dread_types.hpp"
+#include "lib/util/modules.hpp"
+
+
+void* (*RegisterVariablePtr)(CClass *cls, CStrId *varName, CClass *type, uint32_t offset, int64_t getter, int64_t setter) = NULL;
+
+
+VariableDef g_Variables[2] = {
+    { "CChozoCommanderXLifeComponent",      "fTimeDamaged",         "float",            0x26c },
+    { "CChozoCommanderXLifeComponent",      "bIsDamageTick",        "bool",             0x268 }
+};
+
+
+/* Hook RBX fields. Run this after  */
+/* Once romfs is mounted, we can read files from it in order to populate our string replacement list. */
+HOOK_DEFINE_TRAMPOLINE(GenerateReflection) {
+    static Result Callback(void *reflection) {
+        CStrId varName;
+        CClass *thisClass;
+        CClass *varTypeClass;
+        int iVarsMax;
+
+
+        Result res = Orig(reflection);
+
+        iVarsMax = sizeof(g_Variables) / sizeof(VariableDef);
+        for (int i = 0; i < iVarsMax; i++) {
+            thisClass = odr::common::GetCClass(g_Variables[i].parentCls);
+            odr::common::GetCStrId(&varName, g_Variables[i].varName, true);
+            varTypeClass = odr::common::GetCClass(g_Variables[i].varType);
+
+            RegisterVariablePtr(thisClass, &varName, varTypeClass, g_Variables[i].offset, -1, -1);
+            odr::common::DiscardCStrId(&varName);
+        }
+
+        return res;
+    }
+};
+
+namespace odr::fields {
+    void InstallHooks(functionOffsets* offsets)
+    {
+        RegisterVariablePtr = (void*(*)(CClass*, CStrId*, CClass*, uint32_t, int64_t, int64_t))exl::util::modules::GetTargetOffset(offsets->RegisterVariable);
+        GenerateReflection::InstallAtOffset(offsets->GenerateReflection);
+    }
+}

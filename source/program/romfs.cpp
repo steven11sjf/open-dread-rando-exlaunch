@@ -4,14 +4,13 @@
 #include "lib.hpp"
 #include "cJSON.h"
 
+#include "common.hpp"
+
 typedef struct
 {
     u64 crc;
     char const *replacement;
 } stringList;
-
-/* Function ptr to dread's crc function. */
-u64 (*crc64)(char const *str, u64 size) = NULL;
 
 stringList *g_stringList = NULL;
 size_t g_stringListSize = 0;
@@ -25,7 +24,7 @@ void (*create_string_instance) (CStrId* value, const char* str, uint len, u64 cr
 void replaceString(const char **str)
 {
     /* Hash the string for quicker comparison. */
-    u64 crc = crc64(*str, strlen(*str));
+    u64 crc = odr::common::CRC64(*str);
 
     /* Attempt to find matching hash in our list. */
     for(size_t i = 0; i < g_stringListSize; i++)
@@ -97,13 +96,13 @@ void populateStringReplacementList()
             char *replacementFileStr = (char *)malloc(strlen(fileStr) + strlen("rom:/") + 1);
             strcpy(replacementFileStr, "rom:/");
             replacementFileStr = strcat(replacementFileStr, fileStr);
-            g_stringList[i].crc = crc64(fileStr, strlen(fileStr));
+            g_stringList[i].crc = odr::common::CRC64(fileStr);
             g_stringList[i].replacement = replacementFileStr;
         }
         else if(cJSON_IsObject(itemObject))
         {
             char const *str = cJSON_GetItemName(itemObject);
-            g_stringList[i].crc = crc64(str, strlen(str));
+            g_stringList[i].crc = odr::common::CRC64(str);
             g_stringList[i].replacement = cJSON_GetStringValue(itemObject->child);
         }
         i++;
@@ -147,15 +146,15 @@ void setSeedSaveProfile()
         len += 2;
 
         sprintf(slotName, "%s_0", seedHash);
-        crc = crc64(slotName, len);
+        crc = odr::common::CRC64(slotName);
         create_string_instance(&g_stringBank[odr::romfs::STRINGBANK_PROFILE0], slotName, len, crc, true);
 
         slotName[len-1] = '1';
-        crc = crc64(slotName, len);
+        crc = odr::common::CRC64(slotName);
         create_string_instance(&g_stringBank[odr::romfs::STRINGBANK_PROFILE0+1], slotName, len, crc, true);
 
         slotName[len-1] = '2';
-        crc = crc64(slotName, len);
+        crc = odr::common::CRC64(slotName);
         create_string_instance(&g_stringBank[odr::romfs::STRINGBANK_PROFILE0+2], slotName, len, crc, true);
     }
     free(seedHash);
@@ -193,7 +192,6 @@ HOOK_DEFINE_TRAMPOLINE(RomMounted) {
 void odr::romfs::InstallHooks(functionOffsets* offsets) {
     RomMounted::InstallAtFuncPtr(nn::fs::MountRom);
     ForceRomfs::InstallAtOffset(offsets->CFilePathStrIdCtor);
-    crc64 = (u64 (*)(char const *, u64))exl::util::modules::GetTargetOffset(offsets->crc64);
     create_string_instance = (void (*)(CStrId* value, const char* str, uint len, u64 crc, bool storeInPool)) exl::util::modules::GetTargetOffset(offsets->FindOrCreateStringInstance);
     g_stringBank = (CStrId*)exl::util::modules::GetTargetOffset(offsets->StaticStringBank);
 }

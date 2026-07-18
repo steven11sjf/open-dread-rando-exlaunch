@@ -6,10 +6,10 @@
 #include "lua-5.1.5/src/lua.hpp"
 #include "dread_types.hpp"
 #include "debug_hooks.hpp"
+#include "fields.hpp"
 #include "lua_helper.hpp"
 #include "item_pickups.hpp"
 #include "romfs.hpp"
-#include "rbx.hpp"
 
 /* The main executable's pcall, so we get proper error handling. */
 int (*exefs_lua_pcall) (lua_State *L, int nargs, int nresults, int errfunc) = NULL;
@@ -197,6 +197,11 @@ void getVersionOffsets(functionOffsets *offsets)
     if(strcmp(dispVer.displayVersion, "2.1.0") == 0)
     {
         offsets->crc64 = 0x1570;
+        offsets->GetCStrId = 0x3d4;
+        offsets->DiscardStringInstance = 0x803a4;
+        offsets->StringPoolPtr = 0x1d47108;
+        offsets->ReflectionManagerPtr = 0x1d4c8d0;
+        offsets->GetCClassPtr = 0xa5118;
         offsets->CFilePathStrIdCtor = 0x166C8;
         offsets->luaRegisterGlobals = 0x010aed50;
         offsets->lua_pcall = 0x010a3a80;
@@ -214,10 +219,19 @@ void getVersionOffsets(functionOffsets *offsets)
         // String bank
         offsets->StaticStringBank = 0x1d552d0;
         offsets->FindOrCreateStringInstance = 0x406dc;
+
+        // Fields
+        offsets->GenerateReflection = 0xa497c;
+        offsets->RegisterVariable = 0x96524;
     }
     else /* 1.0.0 - 2.0.0 */
     {
         offsets->crc64 = 0x1570;
+        offsets->GetCStrId = 0x3d4;
+        offsets->DiscardStringInstance = 0x80124;
+        offsets->StringPoolPtr = 0x1cee108;
+        offsets->ReflectionManagerPtr = 0x1cf38d0;
+        offsets->GetCClassPtr = 0xa4e28;
         offsets->CFilePathStrIdCtor = 0x16624;
         offsets->luaRegisterGlobals = 0x106ce90;
         offsets->lua_pcall = 0x1061bc0;
@@ -235,6 +249,10 @@ void getVersionOffsets(functionOffsets *offsets)
         // String bank
         offsets->StaticStringBank = 0x1cfc2d0;
         offsets->FindOrCreateStringInstance = 0x4063c;
+
+        // Fields
+        offsets->GenerateReflection = 0xa468c;
+        offsets->RegisterVariable = 0x96234;
     }
 }
 
@@ -249,11 +267,12 @@ extern "C" void exl_main(void* x0, void* x1)
     /* Install the hook at the provided function pointer. Function type is checked against the callback function. */
     /* Hook functions we care about */
     LuaRegisterGlobals::InstallAtOffset(offsets.luaRegisterGlobals);
+    odr::common::InstallFunctions(&offsets);
     odr::debug::InstallHooks(&offsets);
+    odr::fields::InstallHooks(&offsets);
     odr::lua::InstallFunctions(&offsets);
     odr::pickups::InstallHooks(&offsets);
     odr::romfs::InstallHooks(&offsets);
-    odr::rbx::Install();
 
     /* Alternative install funcs: */
     /* InstallAtPtr takes an absolute address as a uintptr_t. */
